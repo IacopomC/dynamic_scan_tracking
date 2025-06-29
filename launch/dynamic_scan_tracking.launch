@@ -1,0 +1,10 @@
+<launch>
+    <!-- Dynamic Scan Tracking Node -->
+    <node pkg="dynamic_scan_tracking" type="dynamic_scan_tracking_node" name="dynamic_scan_tracking" output="screen">
+        
+        <!-- Load all parameters from config file -->
+        <rosparam file="$(find dynamic_scan_tracking)/config/dynamic_scan_tracking.yaml" command="load" />
+        
+    </node>
+    
+</launch>

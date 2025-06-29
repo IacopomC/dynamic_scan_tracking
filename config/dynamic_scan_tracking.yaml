@@ -1,0 +1,100 @@
+# Dynamic Scan Tracking Configuration
+# 
+# This file contains all configurable parameters for the dynamic LiDAR tracking system.
+# The system uses dual parallel trackers (AST/ADT) with adaptive motion models.
+# 
+# For detailed explanations, see TECHNICAL_DOCUMENTATION.md
+
+# Tracking algorithm parameters
+tracking:
+  search_radius: 0.2                   # Increased from 0.2 - larger search area during turns
+  temporal_weight_decay: 0.000000005    # Gamma - exponential decay for temporal weighting  
+  delta_t_pose: 0.01                    # Time delta for motion model (based on LiDAR frequency)
+  max_pose_history: 100                 # Maximum number of poses to keep in memory
+
+# Diagnostic parameters for troubleshooting tracking failures
+diagnostics:
+  enable_tracking_diagnostics: true     # Enable detailed tracking failure analysis
+  min_points_warning: 5                 # Warn if object cloud has fewer points
+  max_prediction_error: 2.0             # Warn if prediction error exceeds this (meters)
+  velocity_change_threshold: 3.0        # Warn if velocity changes drastically (m/s)
+  log_interval: 10                      # Log diagnostics every N frames
+
+# Integration time parameters for dual tracking strategy
+integration_time:
+  # Adaptive Sparse Tracking (AST) - for close, fast-moving objects
+  ast:
+    min_integration_time: 1             # Increased from 1 - more stability
+    max_integration_time: 5             # Increased from 5 - better accuracy during turns
+    max_distance: 25.0                  # Maximum distance for AST in meters
+  
+  # Adaptive Dense Tracking (ADT) - for distant objects requiring more scans
+  adt:
+    min_integration_time: 5             # Reduced from 10 for better performance
+    max_integration_time: 25            # Reduced from 50 for better performance
+    max_distance: 60.0                  # Maximum distance for ADT in meters
+
+# Kalman Filter parameters
+kalman_filter:
+  # Initial state covariance for velocity components
+  initial_velocity_covariance:
+    sigma_vx: 50.0                      # X velocity uncertainty
+    sigma_vy: 50.0                      # Y velocity uncertainty  
+    sigma_vz: 5.0                       # Z velocity uncertainty (typically smaller for ground vehicles)
+  
+  # Process noise (motion model uncertainty)
+  process_noise:
+    noise_a: 3.0                       # Increased from 2.0 - more agility for sharp turns
+    noise_yaw_accel: 0.8                # Increased from 0.5 - faster turn rate adaptation
+    # Higher values = more uncertainty in motion model, better for agile targets
+    # Lower values = trust motion model more
+    # Tune based on target agility and environmental conditions
+  
+  # Motion model configuration
+  motion_model:
+    type: "adaptive"                    # Motion model type: "cv", "ctrv", or "adaptive"
+    turn_rate: 0.0                      # Default turn rate for CTRV model (rad/s) - only used when type="ctrv"
+    use_adaptive: true                  # Legacy parameter - kept for backward compatibility
+    turn_rate_threshold: 0.03           # Reduced from 0.05 - switch to CTRV earlier
+    model_confidence_threshold: 0.2     # Reduced from 0.3 - use CTRV with lower confidence
+  
+  # Measurement noise (LiDAR accuracy)
+  measurement_noise:
+    sigma_x: 0.1                        # X position measurement noise
+    sigma_y: 0.1                        # Y position measurement noise
+    sigma_z: 0.1                        # Z position measurement noise
+
+# Initial object position (used when drone_detection_enabled is false)
+initial_position:
+  x: 9.2 #10.52325
+  y: -0.15 #-1.3305
+  z: 0.4 #-0.3341
+
+# Detection mode
+detection:
+  drone_detection_enabled: false        # If true, wait for initial position from /init_position topic
+
+# ROS Topics
+topics:
+  input:
+    lidar: "/livox/lidar"
+    init_position: "/init_position"
+  output:
+    object_pose: "/dynamic_scan_tracking/object_pose"
+    object_velocity: "/dynamic_scan_tracking/object_velocity"
+    target_pcl: "/dynamic_scan_tracking/target_pcl"
+    raw_lidar_pcl: "/dynamic_scan_tracking/raw_lidar_pcl"  # Raw LiDAR point cloud for visualization
+
+# Frame IDs
+frames:
+  lidar_frame: "livox_frame"
+
+# Visualization options
+visualization:
+  publish_raw_lidar_pcl: true           # Enable/disable raw LiDAR point cloud publishing for debugging
+
+# Performance monitoring
+performance:
+  enable_profiling: true                # Enable performance profiling
+  profiling_window_size: 1000          # Number of samples to keep for statistics
+  enable_debug_output: true            # Enable debug output for model selection and timing
